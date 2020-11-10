@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rhy.Emp.Mapper.IEmpMapper">
+
+    <resultMap id="emp" type="com.rhy.entity.emp.Emp">
+        <id column="eids" property="eids"></id>
+        <result column="ename" property="ename"></result>
+        <result column="esex" property="esex"></result>
+        <result column="ebirthday" property="ebirthday"></result>
+        <result column="etel" property="etel"></result>
+        <result column="eaddr" property="eaddr"></result>
+        <result column="ehiredate" property="ehiredate"></result>
+        <result column="emgr" property="emgr"></result>
+        <result column="esal" property="esal"></result>
+        <result column="ecomm" property="ecomm"></result>
+        <result column="edids" property="edids"></result>
+        <result column="ejids" property="ejids"></result>
+        <association property="dept" resultMap="dept"></association>
+        <association property="job" resultMap="job"></association>
+    </resultMap>
+    <resultMap id="dept" type="com.rhy.entity.emp.Dept">
+        <id column="dids" property="dids"></id>
+        <result column="dname" property="dname"></result>
+    </resultMap>
+    <resultMap id="job" type="com.rhy.entity.emp.Job">
+        <id column="jids" property="jids"></id>
+        <result column="jname" property="jname"></result>
+    </resultMap>
+    <select id="select" resultMap="emp">
+        select * from emp e
+        left join dept d on e.EDIDS = d.DIDS
+        left join job j on e.EJIDS = j.JIDS
+    </select>
+</mapper>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rhy.Admins.Dao.IAdminsDao">
+    <!--
+     id:在命名空间唯一标识符，可以被用来引用这条语句
+     parameterType:传入的参数类型（完全限定名或别名）
+     resultType:返回的参数类型（完全限定名或别名）。但不能和resultMap一同使用
+     resultMap:外部resultMap命名引用。但不能和resultType一同使用
+     useCache：如果设置为true，将会导致本条语句的结果被2级缓存，默认为true
+     timeout：在抛出异常之前，驱动程序等待数据库返回结果的秒数
+
+
+     flushCache:如果设置为true，只要语句被调用，都会清空本地缓存和二级缓存，默认false
+     fetchSize:每次批量返回结果行数和这个设置值相等
+     -->
+    <!-- admins表映射 -->
+    <resultMap id="admin" type="com.rhy.entity.admin.Admins">
+        <id property="aId" column="a_id"></id>
+        <result property="aName" column="a_name"></result>
+        <result property="aAccount" column="a_account"></result>
+        <result property="aPassword" column="a_account"></result>
+        <result property="aLastTime" column="a_password"></result>
+        <result property="aLastTime" column="a_last_time"></result>
+        <result property="aStatus" column="a_status"></result>
+        <result property="sex" column="a_sex" typeHandler="com.rhy.entity.typeHandler.SexTypeHandler"></result>
+    </resultMap>
+    <!-- sql片段 -->
+    <sql id="admins_column">
+        ${tableName}.${prefix}id,${tableName}.${prefix}name,${tableName}.${prefix}account,${tableName}.${prefix}password,${tableName}.${prefix}last_time,${tableName}.${prefix}status,${tableName}.${prefix}sex
+    </sql>
+    <sql id="someInclude">
+        select * from <include refid="${tableName}"></include>
+    </sql>
+    <!-- 简单查询语句 -->
+    <select id="select" resultMap="admin">
+        select
+        <!-- 引用sql片段 -->
+        <include refid="admins_column">
+            <!-- 插入字段前缀 -->
+            <property name="prefix" value="a_"/>
+            <property name="tableName" value="a"/>
+        </include>
+        from s_ADMINS a
+    </select>
+    <!-- 级联查询   管理员（一）-角色（一）-菜单（多） -->
+    <!-- 管理员 --><!-- 查询角色下菜单：1 -->
+    <resultMap id="admin_all" type="com.rhy.entity.admin.Admins">
+        <id property="aId" column="a_id"></id>
+        <result property="aName" column="a_name"></result>
+        <result property="aPassword" column="a_password"></result>
+        <result property="aLastTime" column="a_last_time"></result>
+        <result property="aStatus" column="a_status"></result>
+        <result property="aSex" column="a_sex"></result>
+        <association property="rule" column="a_rid" select="com.rhy.Admins.Dao.IAdminsDao.getRuleById"></association>
+    </resultMap>
+    <!-- 角色 --><!-- 查询角色下菜单：2 -->
+    <resultMap id="rule" type="com.rhy.entity.admin.Rule">
+        <id property="rId" column="r_id"></id>
+        <result property="rName" column="r_name"></result>
+        <collection property="ruleMenus" column="r_id" select="com.rhy.Admins.Dao.IAdminsDao.getMenuByRId"></collection>
+    </resultMap>
+    <!-- 角色菜单 --><!-- 查询角色下菜单：3 -->
+    <resultMap id="ruleMenu" type="com.rhy.entity.admin.RuleMenus">
+        <result property="rmRId" column="rm_r_id"></result>
+        <association property="menu" column="rm_m_id" select="com.rhy.Admins.Dao.IAdminsDao.getMenuByIdNotFid"></association>
+        <collection property="roleMenus" column="rm_m_id" select="com.rhy.Admins.Dao.IAdminsDao.getRuleMenuByMId"></collection>
+    </resultMap><!-- 查询角色下菜单：4 -->
+    <!-- 菜单(没有上级菜单) -->
+    <resultMap id="menu_not_fid" type="com.rhy.entity.admin.Menu">
+        <id property="mId" column="m_id"></id>
+        <result property="mTitle" column="m_title"></result>
+        <result property="mUrl" column="m_url"></result>
+        <result property="mIcon" column="m_icon"></result>
+    </resultMap>
+    <!-- 菜单(包括下级上级菜单) -->
+    <resultMap id="menu" type="com.rhy.entity.admin.Menu">
+        <id property="mId" column="m_id"></id>
+        <result property="mTitle" column="m_title"></result>
+        <result property="mUrl" column="m_url"></result>
+        <result property="mIcon" column="m_icon"></result>
+        <association property="supMenu" column="m_fid" select="com.rhy.Admins.Dao.IAdminsDao.getMenuByIdNotFid"></association>
+        <collection property="menu" column="m_id" select="com.rhy.Admins.Dao.IAdminsDao.getMenuByMId"></collection>
+    </resultMap>
+    <!-- 菜单(没有下级菜单) -->
+    <resultMap id="menu_not_bottom" type="com.rhy.entity.admin.Menu">
+        <id property="mId" column="m_id"></id>
+        <result property="mTitle" column="m_title"></result>
+        <result property="mUrl" column="m_url"></result>
+        <result property="mIcon" column="m_icon"></result>
+        <association property="supMenu" column="m_fid" select="com.rhy.Admins.Dao.IAdminsDao.getMenuByIdNotBottom"></association>
+    </resultMap>
+    <!-- 按管理员id查询 --><!-- 查询角色下菜单：1 -->
+    <select id="getAdminById" parameterType="int" resultMap="admin_all">
+        select * from s_admins a where a.a_id = #{id}
+    </select>
+    <!-- 按角色id查询 --><!-- 查询角色下菜单：2 -->
+    <select id="getRuleById" parameterType="int" resultMap="rule">
+        select * from s_rule r where r.r_id = #{id}
+    </select>
+    <!-- 按菜单id查询 没有上级菜单 --><!-- 查询角色下菜单：3 -->
+    <select id="getMenuByIdNotFid" parameterType="int" resultMap="menu_not_fid">
+        select * from s_menu m where m.m_id = #{id}
+    </select>
+    <!-- 按菜单id查询下级菜单id列表--><!-- 查询角色下菜单：4 -->
+    <select id="getRuleMenuByMId" parameterType="int" resultMap="ruleMenu">
+        select * from s_rule_menu rm where rm.rm_m_fid = #{id}
+    </select>
+    <!-- 按菜单id查询 -->
+    <select id="getMenuById" parameterType="int" resultMap="menu">
+        select * from s_menu m where m.m_id = #{id}
+    </select>
+    <!-- 按菜单id查询 没有下级菜单 -->
+    <select id="getMenuByIdNotBottom" parameterType="int" resultMap="menu_not_bottom">
+        select * from s_menu m where m.m_id = #{id}
+    </select>
+    <!-- 按菜单id查询下级菜单列表-->
+    <select id="getMenuByMId" parameterType="int" resultMap="menu">
+        select * from s_menu m where m.m_fid = #{id}
+    </select>
+    <!-- 按角色id查询下级菜单id列表-->
+    <select id="getMenuByRId" parameterType="int" resultMap="ruleMenu">
+        select * from s_rule_menu rm where rm.rm_r_id = #{id} and rm.rm_m_fid = 0
+    </select>
+</mapper>

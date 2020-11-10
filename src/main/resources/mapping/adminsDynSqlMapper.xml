@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rhy.Admins.Dao.IAdminsDynSqlDao">
+    <!--
+    管理员
+    association：角色
+    -->
+    <resultMap id="admin" type="com.rhy.entity.admin.Admins">
+        <id property="aId" column="a_id"></id>
+        <result property="aName" column="a_name"></result>
+        <result property="aAccount" column="a_account"></result>
+        <result property="aPassword" column="a_password"></result>
+        <result property="aLastTime" column="a_last_time"></result>
+        <result property="aStatus" column="a_status"></result>
+        <result property="aSex" column="a_sex"></result>
+        <association property="rule" column="a_rid" select="com.rhy.Admins.Dao.IAdminsDynSqlDao.getRuleById"></association>
+    </resultMap>
+    <!-- 菜单 -->
+    <resultMap id="menu" type="com.rhy.entity.admin.Menu">
+        <id property="mId" column="m_id"></id>
+        <result property="mTitle" column="m_title"></result>
+    </resultMap>
+    <!-- 角色 -->
+    <!-- collection :角色菜单（根） -->
+    <resultMap id="rule" type="com.rhy.entity.admin.Rule">
+        <id property="rId" column="r_id"></id>
+        <result property="rName" column="r_name"></result>
+        <collection property="ruleMenus" column="r_id" select="com.rhy.Admins.Dao.IAdminsDynSqlDao.getRuleMenuByRId"></collection>
+    </resultMap>
+    <!-- 角色菜单（子菜单） -->
+    <resultMap id="ruleMenu" type="com.rhy.entity.admin.RuleMenus">
+        <association property="menu" column="rm_m_id" select="com.rhy.Admins.Dao.IAdminsDynSqlDao.getMenuById"></association>
+        <!-- column重点:
+        1、单个参数写你要传入的数据库字段名即可
+        2、多个参数：（1）对应方法@Param注解
+                   （2）对应parameterType的POJO映射：{POJO字段=数据库字段,POJO字段=数据库字段,...}
+        -->
+        <collection property="roleMenus" column="{rmRId=rm_r_id,rmFId=rm_m_id}" select="com.rhy.Admins.Dao.IAdminsDynSqlDao.getRuleMenuByMFid"></collection>
+    </resultMap>
+
+
+
+
+    <select id="getAdmins" parameterType="com.rhy.entity.admin.AdminsWhere" resultMap="admin">
+        select * from s_ADMINS
+        <where>
+            <choose>
+                <when test="aId != 0">
+                    a_id = #{aId}
+                </when>
+                <when test="aAccount != null and aAccount != ''">
+                   a_account = #{aAccount}
+                </when>
+                <when test="idList != null and idList.size() != 0">
+                    a_id in
+                    <foreach collection="idList" index="index" item="item" open="(" close=")" separator=",">
+                        #{item}
+                    </foreach>
+                </when>
+                <when test="AccountList != null and AccountList.size() != 0">
+                    a_account in
+                    <foreach collection="AccountList" item="item" index="index" open="(" close=")" separator=",">
+                        #{item}
+                    </foreach>
+                </when>
+                <otherwise>
+                    <if test="aName != null and aName != ''">
+                    <bind name="bind_aName" value="'%'+aName+'%'"></bind>
+                        and a_name like #{bind_aName}
+                    </if>
+                    <if test="aStatus != 0">
+                       and a_status = #{aStatus}
+                    </if>
+                    <if test="aSex != 0">
+                        and a_sex = #{aSex}
+                    </if>
+
+                </otherwise>
+            </choose>
+            
+        </where>
+    </select>
+    <!-- 管理员-角色-菜单 -->
+    <select id="getMenuById" parameterType="int" resultMap="menu">
+        select * from s_menu where m_id = #{id}
+    </select>
+    <select id="getRuleById" parameterType="int" resultMap="rule">
+        select * from s_rule where r_id = #{id}
+    </select>
+    <select id="getRuleMenuByRId" parameterType="int" resultMap="ruleMenu">
+        select * from s_rule_menu where rm_r_id = #{id} and rm_m_fid = 0
+    </select>
+    <select id="getRuleMenuByMFid" parameterType="com.rhy.entity.admin.RuleMenus" resultMap="ruleMenu">
+        select * from s_rule_menu where rm_m_fid = #{rmFId} and rm_r_id = #{rmRId}
+    </select>
+</mapper>

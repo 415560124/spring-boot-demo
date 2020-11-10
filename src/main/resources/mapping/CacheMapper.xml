@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.rhy.Redis.Mapper.CacheMapper">
+    <resultMap id="rule" type="com.rhy.entity.admin.Rule">
+        <id property="rId" column="r_id"></id>
+        <result property="rName" column="r_name"></result>
+    </resultMap>
+    <select id="getRule" parameterType="int" resultMap="rule">
+        select * from s_rule where r_id = #{rId}
+    </select>
+    <insert id="insertRule" parameterType="com.rhy.entity.admin.Rule" useGeneratedKeys="true" keyProperty="rId">
+        insert into s_rule(r_name) values(#{rName});
+    </insert>
+    <update id="updateRule" parameterType="com.rhy.entity.admin.Rule">
+        update s_rule
+        set r_name = #{rName}
+        where
+        r_id = #{rId}
+    </update>
+    <select id="findRule" resultMap="rule">
+        select * from s_rule
+        <where>
+            <if test="rId != 0">
+                r_id = #{rId}
+            </if>
+            <if test="rName != null and rName != ''">
+               and r_name like '%'||#{rName}||'%'
+            </if>
+        </where>
+    </select>
+    <delete id="deleteRule" parameterType="int">
+        delete from s_rule
+        <where>
+            <if test="rId != 0">
+                r_id = #{rId}
+            </if>
+        </where>
+    </delete>
+</mapper>
